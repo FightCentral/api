@@ -1,4 +1,4 @@
-import { randomBytes, pbkdf2Sync } from "crypto"
+import { randomBytes, pbkdf2Sync, createHash } from "crypto"
 
 const SALT_LENGTH = 16;
 const KEY_LENGTH = 64;
@@ -17,7 +17,17 @@ const verifyPassword = (password: string, hash: string): boolean => {
   return derivedKey === key;
 }
 
+const generateRefreshToken = (): string => {
+  return randomBytes(64).toString('hex');
+}
+
+const hashToken = (token: string): string => {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 export {
   hashPassword,
-  verifyPassword
+  verifyPassword,
+  generateRefreshToken,
+  hashToken
 }
