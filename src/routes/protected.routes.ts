@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth.middleware";
+import authenticateJWT from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.get('/dashboard', authenticateToken, (req, res) => {
+router.get('/dashboard', authenticateJWT, (req, res) => {
+  console.log(req.cookies)
   res.json({ message: `Welcome, ${JSON.stringify(req.user)}` });
 });
 
