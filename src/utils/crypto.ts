@@ -1,20 +1,12 @@
-import { randomBytes, pbkdf2Sync, createHash } from "crypto"
+import { randomBytes, createHash } from "crypto";
+import argon2 from "argon2";
 
-const SALT_LENGTH = 16;
-const KEY_LENGTH = 64;
-const ITERATIONS = 100000;
-const DIGEST = 'sha512';
-
-const hashPassword = (password: string): string => {
-  const salt = randomBytes(SALT_LENGTH).toString('hex');
-  const derivedKey = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
-  return `${salt}:${derivedKey}`;
+const hashPassword = async (password: string): Promise<string> => {
+  return await argon2.hash(password);
 }
 
-const verifyPassword = (password: string, hash: string): boolean => {
-  const [salt, key] = hash.split(':');
-  const derivedKey = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
-  return derivedKey === key;
+const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+  return await argon2.verify(hash, password);
 }
 
 const generateRefreshToken = (): string => {

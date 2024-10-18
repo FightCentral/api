@@ -11,7 +11,7 @@ const registerUser = async (email: string, password: string, name: string): Prom
 
   existingUser = await prisma.user.findUnique({ where: { name } });
 
-  const hashedPassword = hashPassword(password);
+  const hashedPassword = await hashPassword(password);
 
   if (existingUser)
     throw new Error('Name already exists');
@@ -97,31 +97,17 @@ const createUser = async (email: string, name: string, method: Method): Promise<
   return user;
 }
 
-// async function logout(user: User): Promise<void> {
-//   const user = await prisma.user.findUnique({ where: { email } });
+async function logout(user: User): Promise<void> {
+  const foundUser = await prisma.user.findUnique({ where: { email: user.email } });
 
-//   if (!user)
-//     throw new Error('Invalid credentials');
+  if (!foundUser)
+    throw new Error('User not found');
 
-//   if (user.method !== 'EMAIL')
-//     throw new Error('Invalid credentials');
-
-//   const isValid = verifyPassword(password, user.password!);
-
-//   if (!isValid)
-//     throw new Error('Invalid credentials');
-
-//   const token = generateToken(user);
-//   const refreshToken = generateRefreshToken();
-//   const hashedRefreshToken = hashToken(refreshToken);
-
-//   await prisma.user.update({
-//     where: { id: user.id },
-//     data: { refreshToken: hashedRefreshToken },
-//   });
-
-//   return { token, refreshToken };
-// }
+  await prisma.user.update({
+    where: { id: foundUser.id },
+    data: { refreshToken: null },
+  });
+}
 
 const generateToken = (user: { id: string, email: string }): string => {
   return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET!, {
@@ -133,5 +119,6 @@ export {
   registerUser,
   loginUser,
   generateToken,
-  signInGoogle
+  signInGoogle,
+  logout
 }
