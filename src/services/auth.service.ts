@@ -47,7 +47,7 @@ const loginUser = async (email: string, password: string): Promise<{ token: stri
   if (user.method !== Method.EMAIL)
     throw new Error('Invalid credentials');
 
-  const isValid = verifyPassword(password, user.password!);
+  const isValid = await verifyPassword(password, user.password!);
 
   if (!isValid)
     throw new Error('Invalid credentials');
