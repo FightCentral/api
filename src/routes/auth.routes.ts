@@ -2,6 +2,7 @@ import { Response, Router, Request } from "express";
 import passport from "passport";
 import { registerUser, loginUser, signInGoogle, logout } from "../services/auth.service";
 import { User } from "@prisma/client";
+import authenticateJWT from "@/middlewares/auth.middleware";
 
 const router = Router();
 
@@ -12,12 +13,14 @@ type CookiesOptions = {
   httpOnly: boolean;
   secure: boolean;
   maxAge: number;
+  sameSite: 'strict' | 'lax' | 'none';
 }
 
 const cookieOptions = (maxAge: number): CookiesOptions => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   maxAge,
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
 });
 
 router.post('/register', async (req, res) => {
@@ -67,7 +70,7 @@ router.get(
   }
 );
 
-router.post('/logout', async (req: Request, res: Response): Promise<void> => {
+router.post('/logout', authenticateJWT, async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) {
       res.status(400).json({ error: 'Already logged out' });
@@ -75,7 +78,7 @@ router.post('/logout', async (req: Request, res: Response): Promise<void> => {
     }
 
     const user = req.user as User;
-    logout(user);
+    await logout(user);
 
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');

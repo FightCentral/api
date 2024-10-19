@@ -4,16 +4,17 @@ import { generateRefreshToken, hashPassword, hashToken, verifyPassword } from "@
 import { prisma } from "@/db";
 
 const registerUser = async (email: string, password: string, name: string): Promise<{ token: string, refreshToken: string, user: User }> => {
-  let existingUser = await prisma.user.findUnique({ where: { email } });
-
-  if (existingUser)
+  const existingUserByEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingUserByEmail)
     throw new Error('User already exists');
 
-  existingUser = await prisma.user.findUnique({ where: { name } });
+  const existingUserByName = await prisma.user.findUnique({ where: { name } });
+  if (existingUserByName)
+    throw new Error('Name already exists');
 
   const hashedPassword = await hashPassword(password);
 
-  if (existingUser)
+  if (existingUserByName)
     throw new Error('Name already exists');
 
   const user = await prisma.user.create({
@@ -86,18 +87,25 @@ const signInGoogle = async (email: string, name: string): Promise<{ token: strin
 }
 
 const createUser = async (email: string, name: string, method: Method): Promise<User> => {
-  const user = await prisma.user.create({
-    data: {
-      email,
-      name,
-      method,
-    },
-  });
+  try {
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        method,
+      },
+    });
+    return user;
+  } catch (error: any) {
+    if (error.code === 'P2002')
+      throw new Error('Email already exists');
 
-  return user;
+    throw error;
+  }
+
 }
 
-async function logout(user: User): Promise<void> {
+const logout = async (user: User): Promise<void> => {
   const foundUser = await prisma.user.findUnique({ where: { email: user.email } });
 
   if (!foundUser)
@@ -110,7 +118,12 @@ async function logout(user: User): Promise<void> {
 }
 
 const generateToken = (user: { id: string, email: string }): string => {
-  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET!, {
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (!jwtSecret)
+    throw new Error('JWT_SECRET is not defined');
+
+  return jwt.sign({ id: user.id, email: user.email }, jwtSecret, {
     expiresIn: '15m',
   });
 }

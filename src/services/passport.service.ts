@@ -4,6 +4,13 @@ import { prisma } from "@/db";
 import { Method, User } from "@prisma/client";
 import { Request } from "express";
 
+const googleClientID = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!googleClientID || !googleClientSecret) {
+  throw new Error('Google OAuth credentials are not defined');
+}
+
 const cookieExtractor = (req: Request): string | null => {
   let token = null;
   if (req && req.cookies) {
@@ -15,8 +22,8 @@ const cookieExtractor = (req: Request): string | null => {
 const googleStrategy =
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientID: googleClientID,
+      clientSecret: googleClientSecret,
       callbackURL: '/auth/google/callback',
     },
     async (_access_token: string, _refreshToken: string, profile: Profile, done) => {
@@ -41,6 +48,7 @@ const googleStrategy =
 
         return done(null, user);
       } catch (err) {
+        console.error('Error in GoogleStrategy:', err);
         return done(err, false);
       }
     }
