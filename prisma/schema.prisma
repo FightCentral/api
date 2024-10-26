@@ -7,22 +7,130 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Method {
+enum METHOD {
   EMAIL
   GOOGLE
 }
 
+enum GENDER {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum CATEGORY {
+  ATOMWEIGHT
+  STRAWWEIGHT
+  FLYWEIGHT
+  BANTAMWEIGHT
+  FEATHERWEIGHT
+  LIGHTWEIGHT
+  WELTERWEIGHT
+  MIDDLEWEIGHT
+  LIGHTHEAVYWEIGHT
+  HEAVYWEIGHT
+  CATCHWEIGHT
+}
+
+enum LEAGUE_TYPE {
+  PRIVATE
+  PUBLIC
+}
+
 model User {
-  id String @id @default(uuid())
-  email String @unique
-  password String?
+  id           String  @id @default(uuid())
+  email        String  @unique
+  password     String?
   refreshToken String?
 
   name String @unique
 
-  method Method
+  method   METHOD
   googleId String? @unique
 
+  rosters Roster[]
+  leagues League[]
+
   emailVerifiedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt       DateTime  @default(now())
+}
+
+model Fighter {
+  id          Int               @id @default(autoincrement())
+  gender      GENDER
+  firstName   String
+  lastName    String
+  nationality String
+  dob         DateTime
+  height      Int
+  categories  CategoryFighter[] // To link different categories to a fighter
+  record      String
+  fighter1    Fight[]           @relation("blueCorner")
+  fighter2    Fight[]           @relation("redCorner")
+  fightStat   FightStat[]
+  Roster      Roster?           @relation(fields: [rosterId], references: [id])
+  rosterId    Int?
+}
+
+model CategoryFighter {
+  id        Int      @id @default(autoincrement())
+  fighterId Int
+  fighter   Fighter  @relation(fields: [fighterId], references: [id])
+  category  CATEGORY
+  rank      Int
+}
+
+model Fight {
+  id           Int      @id @default(autoincrement())
+  fighterOne   Fighter  @relation("blueCorner", fields: [fighterOneId], references: [id])
+  fighterOneId Int
+  fighterTwo   Fighter  @relation("redCorner", fields: [fighterTwoId], references: [id])
+  fighterTwoId Int
+  date         DateTime
+  winnerId     Int
+  round        Int
+  time         String
+  method       String
+
+  fightStats FightStat[]
+}
+
+model FightStat {
+  id                           Int     @id @default(autoincrement())
+  fight                        Fight   @relation(fields: [fightId], references: [id])
+  fightId                      Int
+  fighter                      Fighter @relation(fields: [fighterId], references: [id])
+  fighterId                    Int
+  strikesLanded                Int     @default(0)
+  strikesAttempted             Int     @default(0)
+  significantStrikesLanded     Int     @default(0)
+  significantStrikesAttempted  Int     @default(0)
+  takedownsLanded              Int     @default(0)
+  takedownsAttempted           Int     @default(0)
+  submissionAttempts           Int     @default(0)
+  grapplingAttempts            Int     @default(0)
+  controlTime                  String  @default("00:00")
+  significantStrikesPercentage Float?
+
+  @@unique([fightId, fighterId])
+}
+
+model Roster {
+  id       Int       @id @default(autoincrement())
+  user     User      @relation(references: [id], fields: [userId])
+  userId   String
+  fighters Fighter[]
+}
+
+model League {
+  id        Int         @id @default(autoincrement())
+  title     String
+  subTitle  String
+  banner    String
+  users     User[]
+  createdAt DateTime    @default(now())
+  expiredAt DateTime
+  updatedAt DateTime    @updatedAt
+  type      LEAGUE_TYPE
+  password  String?
 }
