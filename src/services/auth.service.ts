@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { User, Method } from "@prisma/client";
+import { User, METHOD } from "@prisma/client";
 import { generateRefreshToken, hashPassword, hashToken, verifyPassword } from "@/utils/crypto";
 import { prisma } from "@/db";
 
@@ -21,7 +21,7 @@ const registerUser = async (email: string, password: string, name: string): Prom
     data: {
       email,
       password: hashedPassword,
-      method: Method.EMAIL,
+      method: METHOD.EMAIL,
       name,
     },
   });
@@ -45,7 +45,7 @@ const loginUser = async (email: string, password: string): Promise<{ token: stri
   if (!user)
     throw new Error('Invalid credentials');
 
-  if (user.method !== Method.EMAIL)
+  if (user.method !== METHOD.EMAIL)
     throw new Error('Invalid credentials');
 
   const isValid = await verifyPassword(password, user.password!);
@@ -69,9 +69,9 @@ const signInGoogle = async (email: string, name: string): Promise<{ token: strin
   let user: User | null = await prisma.user.findUnique({ where: { email } });
 
   if (!user)
-    user = await createUser(email, name, Method.GOOGLE);
+    user = await createUser(email, name, METHOD.GOOGLE);
 
-  if (user.method !== Method.GOOGLE)
+  if (user.method !== METHOD.GOOGLE)
     throw new Error('Signed up with email');
 
   const token = generateToken(user);
@@ -86,7 +86,7 @@ const signInGoogle = async (email: string, name: string): Promise<{ token: strin
   return { token, refreshToken, user };
 }
 
-const createUser = async (email: string, name: string, method: Method): Promise<User> => {
+const createUser = async (email: string, name: string, method: METHOD): Promise<User> => {
   try {
     const user = await prisma.user.create({
       data: {
