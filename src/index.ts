@@ -9,8 +9,10 @@ import cors from "cors"
 
 import authRoutes from "./routes/auth.routes"
 import protectedRoutes from "./routes/protected.routes";
+import messageRoutes from "@/routes/message.routes"
 
 import { googleStrategy, jwtStrategy } from './services/passport.service';
+import { rabbitMQClient } from './services/message.service';
 
 dotenv.config()
 
@@ -29,6 +31,7 @@ passport.use(googleStrategy);
 
 app.use('/auth', authRoutes);
 app.use('/api', protectedRoutes);
+app.use('/message', messageRoutes)
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
